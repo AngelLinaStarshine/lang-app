@@ -265,185 +265,328 @@ function LearnCard({icon:Icon,title,desc,children}){
   );
 }
 
-function CaesarTool({t}){
-  const [plain,setPlain]=useState("MEET AT NOON");
-  const [shift,setShift]=useState(3);
-  const cipher = useMemo(()=> caesarEncrypt(plain, shift), [plain,shift]);
-  const dec = useMemo(()=> caesarDecrypt(cipher, shift), [cipher,shift]);
+function CaesarTool({ t }) {
+  const [plain, setPlain] = useState("MEET AT NOON");
+  const [shift, setShift] = useState(3);
+  const cipher = useMemo(() => caesarEncrypt(plain, shift), [plain, shift]);
+  const dec = useMemo(() => caesarDecrypt(cipher, shift), [cipher, shift]);
+
   return (
-    <Section title={`${t.caesar} (Shift)`} badge={<Chip icon={Lock}>A1: Modular addition</Chip>} right={<Chip icon={Cpu}>Compute</Chip>}>
+    <Section title={`${t.caesar} (Shift)`} 
+             badge={<Chip icon={Lock}>A1: Modular addition</Chip>} 
+             right={<Chip icon={Cpu}>Compute</Chip>}>
       <div className="grid gap-4 md:grid-cols-3">
+        {/* Plaintext input */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.plaintext}</label>
-          <textarea value={plain} onChange={e=>setPlain(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows={3}/>
+          <label className="block text-sm font-medium">{t.plaintext}</label>
+ <textarea
+  value={plain}
+  onChange={e => setPlain(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+  rows={3}
+/>
+
+
         </div>
+        {/* Shift slider */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.shift}: {shift}</label>
-          <input type="range" min={-13} max={13} value={shift} onChange={e=>setShift(parseInt(e.target.value))} className="mt-1 w-full"/>
-          <p className="mt-2 text-sm text-slate-500">{t.standards}: MA.HSN-Q.A, HSA-APR; DLCS.CS-CS1</p>
+          <label className="block text-sm font-medium">
+            {t.shift}: {shift}
+          </label>
+          <input 
+            type="range" min={-13} max={13} value={shift} 
+            onChange={e => setShift(parseInt(e.target.value))} 
+            className="mt-1 w-full" 
+          />
+          <p className="mt-2 text-sm text-slate-500">
+            {t.standards}: MA.HSN-Q.A, HSA-APR; DLCS.CS-CS1
+          </p>
         </div>
+        {/* Ciphertext output (read-only) */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.ciphertext}</label>
-          <textarea value={cipher} readOnly className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows={3}/>
-          <p className="mt-2 text-xs text-slate-500">Decrypt check: {dec}</p>
+          <label className="block text-sm font-medium">{t.ciphertext}</label>
+          <textarea 
+           value={plain}
+  onChange={e => setPlain(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+  rows={3}
+          />
+          <p className="mt-2 text-xs text-slate-500">
+            Decrypt check: {dec}
+          </p>
         </div>
       </div>
     </Section>
   );
 }
 
-function VigenereTool({t}){
-  const [plain,setPlain]=useState("ATTACK AT DAWN");
-  const [key,setKey]=useState("LEMON");
-  const cipher = useMemo(()=> vigenereEncrypt(plain, key), [plain,key]);
-  const dec = useMemo(()=> vigenereDecrypt(cipher, key), [cipher,key]);
+
+function VigenereTool({ t }) {
+  const [plain, setPlain] = useState("ATTACK AT DAWN");
+  const [key, setKey] = useState("LEMON");
+  const cipher = useMemo(() => vigenereEncrypt(plain, key), [plain, key]);
+  const dec = useMemo(() => vigenereDecrypt(cipher, key), [cipher, key]);
+
   return (
-    <Section title={`${t.vigenere} (Polyalphabetic)`} badge={<Chip icon={KeyRound}>A2: Mod-26 with key</Chip>} right={<Chip icon={Cpu}>Compute</Chip>}>
+    <Section title={`${t.vigenere} (Polyalphabetic)`}
+             badge={<Chip icon={KeyRound}>A2: Mod-26 with key</Chip>}
+             right={<Chip icon={Cpu}>Compute</Chip>}>
       <div className="grid gap-4 md:grid-cols-3">
+        {/* Plaintext input */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.plaintext}</label>
-          <textarea value={plain} onChange={e=>setPlain(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows={3}/>
+          <label className="block text-sm font-medium">{t.plaintext}</label>
+          <textarea 
+            value={plain}
+  onChange={e => setPlain(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+  rows={3}
+          />
         </div>
+        {/* Key input */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.key}</label>
-          <input value={key} onChange={e=>setKey(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
-          <p className="mt-2 text-sm text-slate-500">Frequency analysis challenge: try short vs long keys.</p>
+          <label className="block text-sm font-medium">{t.key}</label>
+         <input
+  value={key}
+  onChange={e => setKey(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Frequency analysis challenge: try short vs long keys.
+          </p>
         </div>
+        {/* Ciphertext output */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.ciphertext}</label>
-          <textarea value={cipher} readOnly className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" rows={3}/>
-          <p className="mt-2 text-xs text-slate-500">Decrypt check: {dec}</p>
+          <label className="block text-sm font-medium">{t.ciphertext}</label>
+          <textarea 
+            value={plain}
+  onChange={e => setPlain(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+  rows={3}
+          />
+          <p className="mt-2 text-xs text-slate-500">
+            Decrypt check: {dec}
+          </p>
         </div>
       </div>
     </Section>
   );
 }
 
-function RSATool({t}){
-  const [state,setState]=useState(()=>generateToyRSA());
-  const [m,setM]=useState(42);
-  const c = useMemo(()=> rsaEncrypt(m, state.e, state.n), [m,state]);
-  const m2 = useMemo(()=> rsaDecrypt(c, state.d, state.n), [c,state]);
+function RSATool({ t }) {
+  const [state, setState] = useState(() => generateToyRSA());
+  const [m, setM] = useState(42);
+  const c = useMemo(() => rsaEncrypt(m, state.e, state.n), [m, state]);
+  const m2 = useMemo(() => rsaDecrypt(c, state.d, state.n), [c, state]);
+
   return (
-    <Section title={`${t.rsa} ${t.smallIntsOnly}`} badge={<Chip icon={ShieldCheck}>Public/Private Keys</Chip>} right={<button className="rounded-lg border border-slate-200 px-3 py-1 text-sm shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" onClick={()=>setState(generateToyRSA())}>{t.generate}</button>}>
+    <Section title={`${t.rsa} ${t.smallIntsOnly}`}
+             badge={<Chip icon={ShieldCheck}>Public/Private Keys</Chip>}
+             right={
+               <button
+  onClick={() => setState(generateToyRSA())}
+  className="rounded-lg border border-blue-100 bg-blue-50 text-blue-900 px-3 py-1 text-sm shadow-sm hover:bg-blue-100 focus:ring-2 focus:ring-blue-400 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-200 dark:hover:bg-blue-900"
+>
+  {t.generate}
+</button>
+
+             }>
       <div className="grid gap-4 md:grid-cols-3">
+        {/* Display generated RSA parameters */}
         <div className="space-y-2">
-          <div className="text-sm text-slate-700 dark:text-slate-200">{t.primeP}: <b>{state.p}</b>, {t.primeQ}: <b>{state.q}</b></div>
-          <div className="text-sm text-slate-700 dark:text-slate-200">{t.modulusN}: <b>{state.n}</b></div>
-          <div className="text-sm text-slate-700 dark:text-slate-200">{t.publicE}: <b>{state.e}</b> &nbsp; | &nbsp; {t.privateD}: <b>{state.d}</b></div>
-          <p className="text-xs text-slate-500">Security rests on factoring n into p×q being hard (for large primes).</p>
+          <div className="text-sm">{t.primeP}: <b>{state.p}</b>, {t.primeQ}: <b>{state.q}</b></div>
+          <div className="text-sm">{t.modulusN}: <b>{state.n}</b></div>
+          <div className="text-sm">
+            {t.publicE}: <b>{state.e}</b> &nbsp; | &nbsp; {t.privateD}: <b>{state.d}</b>
+          </div>
+          <p className="text-xs text-slate-500">
+            Security rests on factoring n = p*q being hard (for large primes).
+          </p>
         </div>
+        {/* Message input */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{t.messageAsInt}</label>
-          <input type="number" value={m} onChange={e=>setM(parseInt(e.target.value||"0"))} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
-          <p className="mt-2 text-xs text-slate-500">Encode text↔int in class; keep 0 &lt; m &lt; n.</p>
+          <label className="block text-sm font-medium">{t.messageAsInt}</label>
+          <input
+  type="number"
+  value={m}
+  onChange={e => setM(parseInt(e.target.value || "0"))}
+  className="mt-1 w-full rounded-lg border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
+          <p className="mt-2 text-xs text-slate-500">
+            Encode text↔int in class; keep 0 &lt; m &lt; n.
+          </p>
         </div>
+        {/* Encryption result */}
         <div className="text-sm">
-          <div>C = m^e mod n → <b>{c}</b></div>
-          <div>m = C^d mod n → <b>{m2}</b></div>
-          <p className="mt-2 text-xs text-slate-500">Shor’s algorithm on a large quantum computer could factor n efficiently → motivates PQC.</p>
+          <div>C = m<sup>e</sup> mod n = <b>{c}</b></div>
+          <div>m = C<sup>d</sup> mod n = <b>{m2}</b></div>
+          <p className="mt-2 text-xs text-slate-500">
+            Shor’s algorithm on a large quantum computer could factor n efficiently 
+            motivates PQC.
+          </p>
         </div>
       </div>
     </Section>
   );
 }
 
-function LatticeSandbox({t}){
+function LatticeSandbox({ t }) {
   const canvasRef = useRef(null);
-  const [basis, setBasis] = useState([[2,1],[1,2]]);
-  const [target,setTarget]=useState([3,4]);
-  const [closest,setClosest]=useState([0,0]);
+  const [basis, setBasis] = useState([[2, 1], [1, 2]]);
+  const [target, setTarget] = useState([3, 4]);
+  const [closest, setClosest] = useState([0, 0]);
 
-  useEffect(()=>{
-    const cvs = canvasRef.current; if(!cvs) return; const ctx = cvs.getContext("2d");
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext("2d");
     drawLattice(ctx, cvs.width, cvs.height, basis);
-    const origin = {x: cvs.width/2, y: cvs.height/2};
-    const toCanvas = (v)=>({x: origin.x + v[0]*20, y: origin.y - v[1]*20});
 
+    // Compute closest lattice point to target by brute force (for demo)
     const B = basis;
-    let best=[0,0], bestDist=1e9;
-    for(let i=-5;i<=5;i++) for(let j=-5;j<=5;j++){
-      const v = [i*B[0][0]+j*B[1][0], i*B[0][1]+j*B[1][1]];
-      const dx=v[0]-target[0], dy=v[1]-target[1];
-      const d=dx*dx+dy*dy; if(d<bestDist){best=v;bestDist=d;}
+    let best = [0, 0], bestDist = Infinity;
+    for (let i = -5; i <= 5; i++) {
+      for (let j = -5; j <= 5; j++) {
+        const v = [i * B[0][0] + j * B[1][0], i * B[0][1] + j * B[1][1]];
+        const dx = v[0] - target[0], dy = v[1] - target[1];
+        const d = dx*dx + dy*dy;
+        if (d < bestDist) {
+          best = v;
+          bestDist = d;
+        }
+      }
     }
     setClosest(best);
- 
-    const tp = toCanvas(target);
-    ctx.fillStyle="#dc2626"; ctx.beginPath(); ctx.arc(tp.x,tp.y,5,0,2*Math.PI); ctx.fill();
 
+    // Draw target and closest point on the lattice
+    const origin = { x: cvs.width/2, y: cvs.height/2 };
+    const toCanvas = (v) => ({
+      x: origin.x + v[0]*20,
+      y: origin.y - v[1]*20
+    });
+    const tp = toCanvas(target);
+    ctx.fillStyle = "#dc2626"; // target in red
+    ctx.beginPath();
+    ctx.arc(tp.x, tp.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
     const bp = toCanvas(best);
-    ctx.fillStyle="#0ea5e9"; ctx.beginPath(); ctx.arc(bp.x,bp.y,5,0,2*Math.PI); ctx.fill();
-   
-    ctx.strokeStyle="#334155"; ctx.setLineDash([4,4]);
-    ctx.beginPath(); ctx.moveTo(tp.x,tp.y); ctx.lineTo(bp.x,bp.y); ctx.stroke();
+    ctx.fillStyle = "#0ea5e9"; // closest lattice point in blue
+    ctx.beginPath();
+    ctx.arc(bp.x, bp.y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    // Draw a dotted line connecting target to closest lattice point
+    ctx.strokeStyle = "#334155";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(tp.x, tp.y);
+    ctx.lineTo(bp.x, bp.y);
+    ctx.stroke();
     ctx.setLineDash([]);
   }, [basis, target]);
 
   return (
-    <Section title={`${t.lattice} (Vectors & Shortest Vector Intuition)`} badge={<Chip icon={Brain}>Linear Algebra</Chip>} right={<Chip icon={Zap}>Explore</Chip>}>
+    <Section title={`${t.lattice} (Vectors & Shortest Vector Intuition)`}
+             badge={<Chip icon={Brain}>Linear Algebra</Chip>}
+             right={<Chip icon={Zap}>Explore</Chip>}>
       <div className="grid gap-4 md:grid-cols-3">
+        {/* Lattice Canvas */}
         <div className="md:col-span-2">
-          <canvas ref={canvasRef} width={600} height={360} className="w-full rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"/>
+          <canvas ref={canvasRef} width={600} height={360}
+                  className="w-full rounded-xl border bg-white shadow-sm" />
         </div>
+        {/* Controls for basis and target */}
         <div className="space-y-3">
-          <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Basis vectors</div>
+          <div className="text-sm font-medium">Basis vectors</div>
           <div className="grid grid-cols-2 gap-2">
-            {[0,1].map(idx=> (
-              <div key={idx} className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
-                <div className="text-xs text-slate-500 dark:text-slate-400">b{idx+1} = [x,y]</div>
+            {[0, 1].map(idx => (
+              <div key={idx} className="rounded-lg border p-2">
+                <div className="text-xs text-slate-500">b{idx+1} = [x, y]</div>
                 <div className="mt-1 flex gap-2">
-                  <input type="number" value={basis[idx][0]} onChange={e=>{
-                    const v=[...basis[idx]]; v[0]=parseInt(e.target.value||"0"); const B=[...basis]; B[idx]=v; setBasis(B);
-                  }} className="w-20 rounded border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
-                  <input type="number" value={basis[idx][1]} onChange={e=>{
-                    const v=[...basis[idx]]; v[1]=parseInt(e.target.value||"0"); const B=[...basis]; B[idx]=v; setBasis(B);
-                  }} className="w-20 rounded border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
+               <input
+  type="number"
+  value={target[0]}
+  onChange={e => setTarget([parseInt(e.target.value || "0"), target[1]])}
+  className="w-20 rounded border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
+                  <input 
+  type="number" 
+  value={basis[idx][1]} 
+  onChange={e => {
+    const v = [...basis[idx]];
+    v[1] = parseInt(e.target.value || "0");
+    const B = [...basis];
+    B[idx] = v;
+    setBasis(B);
+  }}
+  className="w-20 rounded border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
                 </div>
               </div>
             ))}
           </div>
-          <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Target vector t = [x,y]</div>
+          <div className="text-sm font-medium">Target vector t = [x, y]</div>
           <div className="flex gap-2">
-            <input type="number" value={target[0]} onChange={e=>setTarget([parseInt(e.target.value||"0"), target[1]])} className="w-20 rounded border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
-            <input type="number" value={target[1]} onChange={e=>setTarget([target[0], parseInt(e.target.value||"0")])} className="w-20 rounded border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/>
+           <input 
+  type="number" 
+  value={target[0]} 
+  onChange={e => setTarget([parseInt(e.target.value || "0"), target[1]])}
+  className="w-20 rounded border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
+<input 
+  type="number" 
+  value={target[1]} 
+  onChange={e => setTarget([target[0], parseInt(e.target.value || "0")])}
+  className="w-20 rounded border border-blue-100 bg-blue-50 text-blue-900 p-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700"
+/>
+
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Closest lattice point (naive search): [{closest[0]}, {closest[1]}]</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Connect to concepts: L(B), SVP, CVP → hardness underlies Kyber.</p>
+          <p className="text-xs text-slate-600">
+            Closest lattice point (naive search): [{closest[0]}, {closest[1]}]
+          </p>
+          <p className="text-xs text-slate-500">
+            Connect to concepts: L(B), SVP, CVP its hardness underlies Kyber.
+          </p>
         </div>
       </div>
     </Section>
   );
 }
 
-function KyberStoryboard(){
+function KyberStoryboard() {
   const steps = [
-    {title: "1. Setup", text: "Alice publishes a Kyber public key (pk); keeps secret key (sk). Keys are lattice-based."},
-    {title: "2. Encapsulate", text: "Bob uses pk to create a random shared secret and ciphertext ct, then sends ct to Alice."},
-    {title: "3. Decapsulate", text: "Alice uses sk to recover the same shared secret from ct; both now share a symmetric key (e.g., AES-GCM)."},
-    {title: "Why Lattices?", text: "Security relies on hardness of Module-LWE over lattices; believed hard even for quantum computers."},
+    { title: "1. Setup", text: "Alice publishes a Kyber public key (pk); keeps secret key (sk). Keys are lattice-based." },
+    { title: "2. Encapsulate", text: "Bob uses pk to create a random shared secret and ciphertext (ct), then sends ct to Alice." },
+    { title: "3. Decapsulate", text: "Alice uses sk to recover the same shared secret from ct; both now share a symmetric key AES key." },
+    { title: "Why Lattices?", text: "Security relies on hardness of Module-LWE (a lattice problem); believed hard even for quantum computers." },
   ];
   return (
-    <Section title="CRYSTALS-Kyber KEM (Storyboard)" badge={<Chip icon={ShieldCheck}>PQC</Chip>} right={<Chip icon={Info}>Conceptual Demo</Chip>}>
+    <Section title="CRYSTALS-Kyber KEM (Storyboard)"
+             badge={<Chip icon={ShieldCheck}>PQC</Chip>}
+             right={<Chip icon={Info}>Conceptual Demo</Chip>}>
       <div className="grid gap-4 md:grid-cols-2">
-        {steps.map((s,i)=> (
-          <div key={i} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-            <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{s.title}</div>
-            <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{s.text}</p>
+        {steps.map((s, i) => (
+          <div key={i} className="rounded-xl border p-4">
+            <div className="text-sm font-semibold">{s.title}</div>
+            <p className="mt-1 text-sm">{s.text}</p>
           </div>
         ))}
-        <div className="md:col-span-2 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">Notes</div>
-          <ul className="mt-1 list-disc pl-5 text-sm text-slate-700 dark:text-slate-200">
-            <li>Teaching storyboard only; no cryptographic library is used.</li>
-            <li>Discuss KEM vs. traditional key exchange; why PQC matters.</li>
-            <li>Compare key sizes, speed, and security assumptions at a high level.</li>
+        <div className="md:col-span-2 rounded-xl border p-4">
+          <div className="text-sm font-semibold">Notes</div>
+          <ul className="mt-1 list-disc pl-5 text-sm">
+            <li>Teaching storyboard only; no actual cryptographic code is used here.</li>
+            <li>Discuss KEM vs traditional key exchange; why PQC matters now (quantum threat).</li>
+            <li>Compare key sizes, speed, and security assumptions at a high level (class discussion).</li>
           </ul>
         </div>
       </div>
     </Section>
   );
 }
+
 
 function Assess({t}){
   const [q1,setQ1]=useState("");
@@ -562,24 +705,41 @@ function Resources({t}){
   );
 }
 
-export default function App(){
-  const [lang,setLang]=useState("en");
-  const t = i18n[lang];
-  const [tab,setTab]=useState("learn");
+export default function App() {
+  const [lang, setLang] = useState("en");
+  const t = i18n[lang] ?? i18n["en"];
+  const [tab, setTab] = useState("learn");
+
+  const tabs = [
+    { id: "learn", label: t.learn, icon: BookOpen },
+    { id: "simulate", label: t.simulate, icon: Cpu },
+    { id: "assess", label: t.assess, icon: Brain },
+    { id: "project", label: t.project, icon: Zap },
+    { id: "resources", label: t.resources, icon: Info },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-blue-600"/>
-            <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t.appTitle}</h1>
+            <ShieldCheck className="h-6 w-6 text-blue-600" />
+            <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+              {t.appTitle}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <Chip icon={Globe2}>{t.standards}</Chip>
             <label className="ml-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-              <Languages className="h-4 w-4"/>{t.language}
-              <select className="rounded-lg border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={lang} onChange={e=>setLang(e.target.value)}>
+              <Languages className="h-4 w-4" />
+              {t.language}
+              <select
+                aria-label="Language selector"
+                className="rounded-lg border border-slate-200 p-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+              >
                 <option value="en">English</option>
                 <option value="es">Español</option>
               </select>
@@ -589,42 +749,54 @@ export default function App(){
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="mx-auto max-w-6xl px-4 py-6">
-        {/* Hero */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-teal-50 p-6 ring-1 ring-inset ring-slate-200 dark:from-slate-800/60 dark:to-slate-800/30 dark:ring-slate-700">
+        {/* Hero Section */}
+        <section
+          aria-label="Intro"
+          className="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-teal-50 p-6 ring-1 ring-inset ring-slate-200 dark:from-slate-800/60 dark:to-slate-800/30 dark:ring-slate-700"
+        >
           <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
-            <p className="max-w-2xl text-slate-700 dark:text-slate-200">{t.heroBlurb}</p>
+            <p className="max-w-2xl text-slate-700 dark:text-slate-200">
+              {t.heroBlurb}
+            </p>
             <div className="flex gap-2">
-              <button onClick={()=>setTab("simulate")} className="rounded-xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700 active:scale-[.98] transition">{t.start}</button>
-              <button onClick={()=>setTab("learn")} className="rounded-xl border border-blue-200 bg-white px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-50 active:scale-[.98] transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">{t.learn}</button>
+              <button
+                onClick={() => setTab("simulate")}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700 active:scale-[.98] transition"
+              >
+                {t.start}
+              </button>
+              <button
+                onClick={() => setTab("learn")}
+                className="rounded-xl border border-blue-200 bg-white px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-50 active:scale-[.98] transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {t.learn}
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Tabs */}
-        <nav className="mb-6 flex flex-wrap gap-2">
-          {[
-            {id:"learn", label:t.learn, icon:BookOpen},
-            {id:"simulate", label:t.simulate, icon:Cpu},
-            {id:"assess", label:t.assess, icon:Brain},
-            {id:"project", label:t.project, icon:Zap},
-            {id:"resources", label:t.resources, icon:Info},
-          ].map(x=> (
+        {/* Navigation Tabs */}
+        <nav aria-label="Main navigation" className="mb-6 flex flex-wrap gap-2">
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
-              key={x.id}
-              onClick={()=>setTab(x.id)}
+              key={id}
+              onClick={() => setTab(id)}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-inset transition
-                ${tab===x.id
+                ${tab === id
                   ? "bg-blue-600 text-white ring-blue-600"
                   : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700 dark:hover:bg-slate-800"}`}
+              aria-current={tab === id ? "page" : undefined}
             >
-              <x.icon className="h-4 w-4"/>{x.label}
+              <Icon className="h-4 w-4" />
+              {label}
             </button>
           ))}
         </nav>
 
-        {/* Content */}
-        {tab==="learn" && (
+        {/* Content Panels */}
+        {tab === "learn" && (
           <div className="grid gap-4 md:grid-cols-2">
             <LearnCard icon={Lock} title={t.l1} desc={t.l1p}>
               <ul className="ml-4 list-disc text-sm">
@@ -659,7 +831,7 @@ export default function App(){
           </div>
         )}
 
-        {tab==="simulate" && (
+        {tab === "simulate" && (
           <div className="space-y-6">
             <CaesarTool t={t} />
             <VigenereTool t={t} />
@@ -669,14 +841,18 @@ export default function App(){
           </div>
         )}
 
-        {tab==="assess" && <Assess t={t} />}
-        {tab==="project" && <Project t={t} />}
-        {tab==="resources" && <Resources t={t} />}
+        {tab === "assess" && <Assess t={t} />}
+        {tab === "project" && <Project t={t} />}
+        {tab === "resources" && <Resources t={t} />}
       </main>
 
+      {/* Footer */}
       <footer className="mt-10 border-t border-slate-200 bg-white py-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto max-w-6xl px-4 text-xs text-slate-500 dark:text-slate-400">
-          <p>Educational demo. Do not use for real cryptographic security. © {new Date().getFullYear()} PQC in HS Curriculum.</p>
+          <p>
+            Educational demo. Do not use for real cryptographic security. ©Besoangel{" "}
+            {new Date().getFullYear()} PQC in HS Curriculum.
+          </p>
         </div>
       </footer>
     </div>
