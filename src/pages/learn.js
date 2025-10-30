@@ -1,104 +1,72 @@
 /* eslint-env es2020 */
-import React, { useState } from "react";
-import { Globe2, ShieldCheck, Lock, KeyRound, Zap } from "lucide-react";
-import { ResourceDrawer } from "../shared";
+import React from "react";
 
-function LearnCard({ icon: Icon, title, desc, children, onOpen }) {
+const blockWrap =
+  "rounded-3xl p-1 ring-2 bg-gradient-to-br backdrop-blur-md shadow transition-transform duration-300 hover:scale-[1.01]";
+const blockCard = "rounded-[1.3rem] bg-white/85 p-5 animate-[fadeUp_350ms_ease-out]";
+
+const blocks = [
+  {
+    id: "b1",
+    title: "Block 1 — Classical Ciphers",
+    ring: "ring-pink-300",
+    grad: "from-pink-200/80 via-rose-200/70 to-purple-200/70",
+    textGrad:
+      "bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 bg-clip-text text-transparent",
+    body: [
+      "Caesar & Vigenère recap",
+      "Frequency analysis intuition",
+      "Why modern crypto left them behind",
+    ],
+  },
+  {
+    id: "b2",
+    title: "Block 2 — Block Ciphers & Modes",
+    ring: "ring-yellow-300",
+    grad: "from-yellow-200/80 via-amber-200/70 to-orange-200/70",
+    textGrad:
+      "bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent",
+    body: ["AES basics", "ECB vs CBC vs CTR", "Authenticated encryption (GCM)"],
+  },
+  {
+    id: "b3",
+    title: "Block 3 — Stream Ciphers",
+    ring: "ring-blue-300",
+    grad: "from-blue-200/80 via-sky-200/70 to-cyan-200/70",
+    textGrad:
+      "bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-600 bg-clip-text text-transparent",
+    body: ["ChaCha20 overview", "Nonce hygiene", "Throughput vs latency tradeoffs"],
+  },
+  {
+    id: "b4",
+    title: "Block 4 — PQC Primer",
+    ring: "ring-green-300",
+    grad: "from-green-200/80 via-emerald-200/70 to-lime-200/70",
+    textGrad:
+      "bg-gradient-to-r from-green-600 via-emerald-600 to-lime-600 bg-clip-text text-transparent",
+    body: ["Lattices in brief", "CRYSTALS-Kyber (KEM)", "Migration strategies"],
+  },
+];
+
+export default function Learn() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
-            <Icon className="h-6 w-6 text-slate-700 dark:text-slate-200" />
+    <div className="grid gap-4 md:grid-cols-2">
+      {blocks.map((b, i) => (
+        <div
+          key={b.id}
+          className={`${blockWrap} ${b.ring} ${"bg-gradient-to-br " + b.grad}`}
+          style={{ animationDelay: `${i * 60}ms` }}
+        >
+          <div className={blockCard}>
+            <h3 className={`text-lg font-extrabold ${b.textGrad}`}>{b.title}</h3>
+            <ul className="mt-2 list-disc pl-5 text-sm text-slate-800">
+              {b.body.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </div>
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-            {title}
-          </h3>
         </div>
-        <button
-          onClick={onOpen}
-          className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm text-blue-700 shadow-sm hover:bg-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          Open resources
-        </button>
-      </div>
-      <p className="mt-2 text-slate-600 dark:text-slate-300">{desc}</p>
-      <div className="mt-3 text-slate-700 dark:text-slate-200">{children}</div>
+      ))}
     </div>
-  );
-}
-
-export default function Learn({ t }) {
-  const [openTopic, setOpenTopic] = useState(null);
-  return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2">
-        <LearnCard
-          icon={Lock}
-          title={t.l1}
-          desc={t.l1p}
-          onOpen={() => setOpenTopic({ id: "classical", title: t.l1 })}
-        >
-          <ul className="ml-4 list-disc text-sm">
-            <li>Shift &amp; polyalphabetic ciphers; why frequency analysis works.</li>
-            <li>Modular arithmetic: add, wrap, residues mod 26.</li>
-          </ul>
-        </LearnCard>
-
-        <LearnCard
-          icon={KeyRound}
-          title={t.l2}
-          desc={t.l2p}
-          onOpen={() => setOpenTopic({ id: "rsa", title: t.l2 })}
-        >
-          <ul className="ml-4 list-disc text-sm">
-            <li>Public vs private keys; modular exponentiation.</li>
-            <li>Security ⇢ factoring large n is hard (classically).</li>
-          </ul>
-        </LearnCard>
-
-        <LearnCard
-          icon={Zap}
-          title={t.l3}
-          desc={t.l3p}
-          onOpen={() => setOpenTopic({ id: "quantum", title: t.l3 })}
-        >
-          <ul className="ml-4 list-disc text-sm">
-            <li>Shor’s algorithm undermines factoring / discrete log.</li>
-            <li>Harvest-now, decrypt-later motivates migration plans.</li>
-          </ul>
-        </LearnCard>
-
-        <LearnCard
-          icon={ShieldCheck}
-          title={t.l4}
-          desc={t.l4p}
-          onOpen={() => setOpenTopic({ id: "lattice-kyber", title: t.l4 })}
-        >
-          <ul className="ml-4 list-disc text-sm">
-            <li>Lattices: points from integer combos of basis vectors.</li>
-            <li>Hard problems (Module-LWE) underpin Kyber KEM.</li>
-          </ul>
-        </LearnCard>
-
-        <LearnCard
-          icon={Globe2}
-          title={t.l5}
-          desc={t.l5p}
-          onOpen={() => setOpenTopic({ id: "ethics", title: t.l5 })}
-        >
-          <ul className="ml-4 list-disc text-sm">
-            <li>Privacy, surveillance, and equitable access.</li>
-            <li>Digital citizenship: safe credentials, MFA, updates.</li>
-          </ul>
-        </LearnCard>
-      </div>
-
-      <ResourceDrawer
-        open={!!openTopic}
-        onClose={() => setOpenTopic(null)}
-        topic={openTopic}
-      />
-    </>
   );
 }
