@@ -1,26 +1,19 @@
 /* eslint-env es2020 */
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
-import {
-  Globe2,
-  ShieldCheck,
-  Languages,
-  BookOpen,
-  Route,
-  Info,
-} from "lucide-react";
-
+import { Globe2, ShieldCheck, Languages } from "lucide-react";
+import TeacherPage from "./pages/teacher";
+import StudentPage from "./pages/student";
 import { DarkToggle, Chip, i18n } from "./shared";
-import Learn from "./pages/learn";
-import LearningPath from "./pages/learning-path";
-import Resources from "./pages/resources";
+
 
 function RoleGate({ onPass }) {
   const [role, setRole] = useState("student");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
 
-  const handleEnter = () => {
+  const onSubmit = (e) => {
+    e.preventDefault();
     const ok =
       (role === "student" && code === "student25") ||
       (role === "teacher" && code === "teacher25");
@@ -34,10 +27,11 @@ function RoleGate({ onPass }) {
   };
 
   return (
-    <div className="mx-auto mt-16 max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
-        Welcome
-      </h2>
+    <form
+      onSubmit={onSubmit}
+      className="mx-auto mt-16 max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+    >
+      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Welcome</h2>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
         Choose your role and enter your personal code to proceed.
       </p>
@@ -63,14 +57,14 @@ function RoleGate({ onPass }) {
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder={role === "student" ? "student25" : "teacher25"}
+        autoFocus
       />
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
       <button
-        onClick={handleEnter}
+        type="submit"
         className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
-        type="button"
       >
         Enter
       </button>
@@ -78,30 +72,24 @@ function RoleGate({ onPass }) {
       <p className="mt-4 text-xs text-slate-500">
         Student code: <code>student25</code> · Teacher code: <code>teacher25</code>
       </p>
-    </div>
+    </form>
   );
 }
 
+
+/* ---------------- App ---------------- */
 export default function App() {
   const [lang, setLang] = useState("en");
   const t = i18n[lang] ?? i18n.en;
+
+  const appTitle = "Academic Language Tool for Community College";
+  const standardsLabel = "Aligned to College Communication & Literacy";
 
   const [authedRole, setAuthedRole] = useState(() => {
     return localStorage.getItem("pqc_authed") === "1"
       ? localStorage.getItem("pqc_role") || "student"
       : null;
   });
-
-  const [tab, setTab] = useState("learn");
-
-  const tabs = useMemo(
-    () => [
-      { id: "learn", label: t.learn, icon: BookOpen },
-      { id: "path", label: t.learningPath, icon: Route },
-      { id: "resources", label: t.resources, icon: Info },
-    ],
-    [t]
-  );
 
   const logout = () => {
     localStorage.removeItem("pqc_authed");
@@ -125,7 +113,7 @@ export default function App() {
               <div className="relative flex items-center gap-2">
                 <ShieldCheck className="h-6 w-6 text-pink-500" />
                 <h1 className="text-lg font-extrabold bg-gradient-to-r from-pink-500 via-yellow-500 to-blue-500 bg-clip-text text-transparent">
-                  {t.appTitle}
+                  {appTitle}
                 </h1>
               </div>
             </div>
@@ -166,26 +154,22 @@ export default function App() {
             <div className="relative flex items-center gap-2">
               <ShieldCheck className="h-6 w-6 text-pink-500" />
               <h1 className="text-lg font-extrabold bg-gradient-to-r from-pink-500 via-yellow-500 to-blue-500 bg-clip-text text-transparent">
-                {t.appTitle}
+                {appTitle}
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Chip
-              icon={Globe2}
-              className="!bg-white/70 !text-slate-800 border-pink-300"
-            >
-              {t.standards}
+            <Chip icon={Globe2} className="!bg-white/70 !text-slate-800 border-pink-300">
+              {standardsLabel}
             </Chip>
 
             <span
-              className={`rounded-full border px-2 py-1 text-xs font-semibold shadow-sm
-                ${
-                  authedRole === "teacher"
-                    ? "border-yellow-400 text-yellow-900 bg-yellow-200/80"
-                    : "border-teal-400 text-teal-900 bg-teal-200/80"
-                }`}
+              className={`rounded-full border px-2 py-1 text-xs font-semibold shadow-sm ${
+                authedRole === "teacher"
+                  ? "border-yellow-400 text-yellow-900 bg-yellow-200/80"
+                  : "border-teal-400 text-teal-900 bg-teal-200/80"
+              }`}
             >
               Role: {authedRole}
             </span>
@@ -218,67 +202,15 @@ export default function App() {
       </header>
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-6">
-        {/* Hero */}
-        <section className="mb-6 rounded-2xl bg-gradient-to-r from-pink-50 to-yellow-50 p-6 ring-1 ring-inset ring-slate-200 dark:from-slate-800/60 dark:to-slate-800/30 dark:ring-slate-700">
-          <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
-            <p className="max-w-2xl text-slate-700 dark:text-slate-200">
-              {t.heroBlurb}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setTab("path");
-                  const el = document.querySelector("#learning-path");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700 active:scale-[.98] transition"
-                type="button"
-              >
-                {t.start}
-              </button>
-              <button
-                onClick={() => setTab("learn")}
-                className="rounded-xl border border-blue-200 bg-white px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-50 active:scale-[.98] transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                type="button"
-              >
-                {t.learn}
-              </button>
-            </div>
-          </div>
-        </section>
+        {/* No hero text per request */}
 
-        {/* Tabs */}
-        <nav aria-label="Main navigation" className="mb-6 flex flex-wrap gap-2">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-inset transition ${
-                tab === id
-                  ? "bg-blue-600 text-white ring-blue-600"
-                  : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700 dark:hover:bg-slate-800"
-              }`}
-              aria-current={tab === id ? "page" : undefined}
-              type="button"
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Routed content */}
-        {tab === "learn" && <Learn />}
-        {tab === "path" && <LearningPath role={authedRole} />}
-        {tab === "resources" && <Resources />}
+        {/* Role-based page */}
+        {authedRole === "teacher" ? <TeacherPage /> : <StudentPage />}
       </main>
 
       <footer className="relative z-10 mt-10 border-t border-white/50 bg-white/60 py-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/60">
         <div className="mx-auto max-w-6xl px-4 text-xs text-slate-700 dark:text-slate-300">
-          <p>
-            Educational demo. Do not use for real cryptographic security. ©Besoangel{" "}
-            {new Date().getFullYear()} PQC in HS Curriculum.
-          </p>
+          <p>Educational demo. ©Besoangel {new Date().getFullYear()} Academic Language Tool.</p>
         </div>
       </footer>
     </div>
