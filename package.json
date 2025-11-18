@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.468.0",
+    "mammoth": "^1.11.0",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

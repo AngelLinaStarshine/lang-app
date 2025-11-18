@@ -2,6 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
+import MyAcademicWords from "./student-academic-words";
+import { highlightCommandWords } from "../utils/commandWords";
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 /* ----- shared keys & subjects (match teacher) ----- */
@@ -13,7 +16,7 @@ const KEYS = {
 
 const SUBJECTS = [
   { id: "literature", title: "Literature" },
-  { id: "dance", title: "Dance" },
+  { id: "biology", title: "Biology" },
   { id: "history", title: "History" },
   { id: "it", title: "Information technology" },
 ];
@@ -57,15 +60,15 @@ function LessonHeader({ subjectId, lesson }) {
 
 /* ---------- Materials viewer (files, video, whiteboard) ---------- */
 function LessonMaterials({ lesson }) {
- const groups = useMemo(() => {
-  const src = lesson?.resources ?? [];
-  const byCat = {};
-  for (const r of src) {
-    const k = r.category || "Unit material";
-    (byCat[k] = byCat[k] || []).push(r);
-  }
-  return byCat;
-}, [lesson]);
+  const groups = useMemo(() => {
+    const src = lesson?.resources ?? [];
+    const byCat = {};
+    for (const r of src) {
+      const k = r.category || "Unit material";
+      (byCat[k] = byCat[k] || []).push(r);
+    }
+    return byCat;
+  }, [lesson]);
 
   const kindLabel = (k) =>
     k === "notes" ? "Lecture files" : k === "video" ? "Video" : "Whiteboard/Miro";
@@ -94,10 +97,17 @@ function LessonMaterials({ lesson }) {
                       <ul className="list-disc pl-4">
                         {r.files.map((f, fi) => (
                           <li key={fi} className="flex items-center gap-2">
-                            <a className="underline truncate" href={f.url} target="_blank" rel="noreferrer">
+                            <a
+                              className="underline truncate"
+                              href={f.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               {f.name}
                             </a>
-                            <span className="text-xs opacity-60">({prettySize(f.size)})</span>
+                            <span className="text-xs opacity-60">
+                              ({prettySize(f.size)})
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -106,13 +116,23 @@ function LessonMaterials({ lesson }) {
                     ))}
 
                   {r.kind === "video" && (
-                    <a className="underline break-all" href={r.videoLink} target="_blank" rel="noreferrer">
+                    <a
+                      className="underline break-all"
+                      href={r.videoLink}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {r.videoLink || "—"}
                     </a>
                   )}
 
                   {r.kind === "whiteboard" && (
-                    <a className="underline break-all" href={r.whiteboardLink} target="_blank" rel="noreferrer">
+                    <a
+                      className="underline break-all"
+                      href={r.whiteboardLink}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {r.whiteboardLink || "—"}
                     </a>
                   )}
@@ -205,6 +225,7 @@ async function readTxtFromURL(url) {
   return text.trim();
 }
 
+/* ---------- Interactive practice component ---------- */
 function LessonPracticeAuto({ subjectId, lesson }) {
   const [status, setStatus] = useState("idle"); // idle | loading | ready | empty | error
   const [err, setErr] = useState("");
@@ -212,8 +233,12 @@ function LessonPracticeAuto({ subjectId, lesson }) {
   const [items, setItems] = useState([]);
   const [vocab, setVocab] = useState([]);
 
+  // quiz state: per-item responses
+  const [responses, setResponses] = useState({}); // { [index]: { selected, userAnswer, checked, correct } }
+
   useEffect(() => {
     let cancelled = false;
+    setResponses({}); // reset quiz state when lesson changes
 
     async function run() {
       setErr("");
@@ -246,7 +271,8 @@ function LessonPracticeAuto({ subjectId, lesson }) {
       );
       const txts = noteFiles.filter(
         (f) =>
-          (f.type || "").includes("text/plain") || (f.name || "").toLowerCase().endsWith(".txt")
+          (f.type || "").includes("text/plain") ||
+          (f.name || "").toLowerCase().endsWith(".txt")
       );
 
       const candidates = [...pdfs, ...txts];
@@ -289,7 +315,9 @@ function LessonPracticeAuto({ subjectId, lesson }) {
         const subject = all[subjectId];
         if (subject && Array.isArray(subject.lessons)) {
           const idx = subject.lessons.findIndex(
-            (l) => String(l.lessonNo) === String(lesson.lessonNo)
+            (l) =>
+              String(l.lessonNo) ===
+              String(lesson.lessonNo)
           );
           if (idx >= 0) {
             subject.lessons[idx] = {
@@ -320,6 +348,48 @@ function LessonPracticeAuto({ subjectId, lesson }) {
     };
   }, [subjectId, lesson]);
 
+  // --- interaction handlers ---
+  const handleChoiceClick = (index, choice) => {
+    const q = items[index];
+    if (!q) return;
+    setResponses((prev) => ({
+      ...prev,
+      [index]: {
+        ...(prev[index] || {}),
+        selected: choice,
+        checked: true,
+        correct: choice === q.answer,
+      },
+    }));
+  };
+
+  const handleClozeInputChange = (index, value) => {
+    setResponses((prev) => ({
+      ...prev,
+      [index]: {
+        ...(prev[index] || {}),
+        userAnswer: value,
+        // don't mark checked/correct yet
+      },
+    }));
+  };
+
+  const handleClozeCheck = (index) => {
+    const q = items[index];
+    if (!q) return;
+    const prev = responses[index] || {};
+    const user = (prev.userAnswer || "").trim().toLowerCase();
+    const correctAnswer = (q.answer || "").trim().toLowerCase();
+    setResponses((all) => ({
+      ...all,
+      [index]: {
+        ...prev,
+        checked: true,
+        correct: !!user && user === correctAnswer,
+      },
+    }));
+  };
+
   return (
     <section className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
       <h3 className="text-base font-semibold">Reference Text → Vocabulary & Practice</h3>
@@ -332,7 +402,8 @@ function LessonPracticeAuto({ subjectId, lesson }) {
       )}
       {status === "empty" && (
         <p className="mt-2 text-sm text-slate-500">
-          No readable materials yet. Ask your teacher to upload a PDF or TXT in “Lecture notes”.
+          No readable materials yet. Ask your teacher to upload a PDF, TXT, or set a reference
+          text.
         </p>
       )}
       {status === "error" && <p className="mt-2 text-sm text-red-600">{err}</p>}
@@ -345,34 +416,110 @@ function LessonPracticeAuto({ subjectId, lesson }) {
                 Reference text (preview)
               </summary>
               <div className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded border p-2 text-xs leading-relaxed dark:border-slate-700">
-                {refText}
+                {highlightCommandWords(refText)}
               </div>
             </details>
           ) : null}
 
+          {/* Interactive practice */}
           {items.length > 0 ? (
             <details className="mt-4" open>
               <summary className="cursor-pointer text-sm font-medium">
                 Practice items ({items.length})
               </summary>
-              <ul className="mt-2 list-decimal pl-5 text-sm">
-                {items.map((q, i) => (
-                  <li key={i} className="mb-2">
-                    {q.prompt}
-                    {q.choices && (
-                      <div className="mt-1 grid grid-cols-1 gap-1 md:grid-cols-2">
-                        {q.choices.map((c, ci) => (
-                          <span
-                            key={ci}
-                            className="rounded border px-2 py-1 text-xs dark:border-slate-700"
+              <ul className="mt-2 list-decimal pl-5 text-sm space-y-3">
+                {items.map((q, i) => {
+                  const resp = responses[i] || {};
+                  return (
+                    <li key={i} className="mb-1">
+                      {/* Prompt */}
+                      <div className="mb-1">{highlightCommandWords(q.prompt)}</div>
+
+                      {/* Cloze question */}
+                      {q.type === "cloze" && (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <input
+                            className="w-40 rounded-lg border border-slate-300 p-1 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                            placeholder="Type the missing word"
+                            value={resp.userAnswer || ""}
+                            onChange={(e) =>
+                              handleClozeInputChange(i, e.target.value)
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleClozeCheck(i)}
+                            className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 active:scale-95"
                           >
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                ))}
+                            Check
+                          </button>
+                          {resp.checked && (
+                            <span
+                              className={
+                                "text-xs font-semibold " +
+                                (resp.correct ? "text-emerald-600" : "text-red-600")
+                              }
+                            >
+                              {resp.correct
+                                ? "Correct!"
+                                : `Try again. Answer: ${q.answer}`}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Multiple choice */}
+                      {q.type === "mc" && q.choices && (
+                        <div className="mt-1 grid grid-cols-1 gap-1 md:grid-cols-2">
+                          {q.choices.map((c, ci) => {
+                            const isSelected = resp.selected === c;
+                            const isCorrect = c === q.answer;
+                            let extraClass =
+                              "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800";
+
+                            if (resp.checked) {
+                              if (isCorrect) {
+                                extraClass =
+                                  "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-900/20";
+                              } else if (isSelected && !isCorrect) {
+                                extraClass =
+                                  "border-red-500 bg-red-50 text-red-900 dark:bg-red-900/20";
+                              }
+                            }
+
+                            return (
+                              <button
+                                key={ci}
+                                type="button"
+                                onClick={() => handleChoiceClick(i, c)}
+                                className={
+                                  "rounded border px-2 py-1 text-xs text-left dark:border-slate-700 " +
+                                  extraClass
+                                }
+                              >
+                                {c}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* MC feedback text */}
+                      {q.type === "mc" && resp.checked && (
+                        <div
+                          className={
+                            "mt-1 text-xs font-semibold " +
+                            (resp.correct ? "text-emerald-600" : "text-red-600")
+                          }
+                        >
+                          {resp.correct
+                            ? "Correct!"
+                            : `Incorrect. The correct answer is: ${q.answer}`}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </details>
           ) : (
@@ -386,7 +533,10 @@ function LessonPracticeAuto({ subjectId, lesson }) {
               </summary>
               <div className="mt-2 flex flex-wrap gap-1 text-xs">
                 {vocab.map((v) => (
-                  <span key={v.word} className="rounded border px-2 py-1 dark:border-slate-700">
+                  <span
+                    key={v.word}
+                    className="rounded border px-2 py-1 dark:border-slate-700"
+                  >
                     {v.word} · {v.count}
                   </span>
                 ))}
@@ -436,7 +586,13 @@ function NotesAndVocab({ subjectId, lesson }) {
     if (!w || !d || !lesson) return;
     const next = { ...vocabAll };
     next[studentId] = next[studentId] || [];
-    next[studentId].push({ word: w, definition: d, example: example.trim(), scopeKey, ts: Date.now() });
+    next[studentId].push({
+      word: w,
+      definition: d,
+      example: example.trim(),
+      scopeKey,
+      ts: Date.now(),
+    });
     save(KEYS.VOCAB, next);
     setWord("");
     setDefinition("");
@@ -457,7 +613,9 @@ function NotesAndVocab({ subjectId, lesson }) {
           }}
         />
         <span className="ml-auto text-xs text-slate-500">
-          {lesson ? `Notes & vocab for Lesson ${lesson.lessonNo}` : "Select a lesson to take notes"}
+          {lesson
+            ? `Notes & vocab for Lesson ${lesson.lessonNo}`
+            : "Select a lesson to take notes"}
         </span>
       </div>
 
@@ -487,7 +645,10 @@ function NotesAndVocab({ subjectId, lesson }) {
             .slice()
             .reverse()
             .map((n, idx) => (
-              <li key={idx} className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+              <li
+                key={idx}
+                className="rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+              >
                 {n.text}
               </li>
             ))}
@@ -535,9 +696,14 @@ function NotesAndVocab({ subjectId, lesson }) {
             .slice()
             .reverse()
             .map((v, idx) => (
-              <li key={idx} className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+              <li
+                key={idx}
+                className="rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+              >
                 <span className="font-bold">{v.word}</span> — {v.definition}
-                {v.example ? <span className="text-slate-500"> (e.g., {v.example})</span> : null}
+                {v.example ? (
+                  <span className="text-slate-500"> (e.g., {v.example})</span>
+                ) : null}
               </li>
             ))}
         </ul>
@@ -564,6 +730,8 @@ export default function StudentPage() {
 
   // Default-select the first lesson (if any)
   const [lessonNo, setLessonNo] = useState("");
+  const [view, setView] = useState("lesson"); // "lesson" | "academicWords"
+
   useEffect(() => {
     setLessonNo(lessons[0]?.lessonNo || "");
   }, [lessons]);
@@ -619,11 +787,44 @@ export default function StudentPage() {
         )}
       </div>
 
-      <LessonHeader subjectId={subjectId} lesson={currentLesson} />
-      <LessonMaterials lesson={currentLesson} />
-      {/* Auto-generate & display practice for this specific lesson */}
-      <LessonPracticeAuto subjectId={subjectId} lesson={currentLesson} />
-      <NotesAndVocab subjectId={subjectId} lesson={currentLesson} />
+      {/* View toggle: This Lesson vs My Academic Words */}
+      <div className="mx-auto flex w-full max-w-5xl gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setView("lesson")}
+          className={
+            "rounded-full px-3 py-1.5 " +
+            (view === "lesson"
+              ? "bg-emerald-600 text-white"
+              : "border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200")
+          }
+        >
+          This Lesson
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("academicWords")}
+          className={
+            "rounded-full px-3 py-1.5 " +
+            (view === "academicWords"
+              ? "bg-emerald-600 text-white"
+              : "border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200")
+          }
+        >
+          My Academic Words
+        </button>
+      </div>
+
+      {view === "lesson" ? (
+        <>
+          <LessonHeader subjectId={subjectId} lesson={currentLesson} />
+          <LessonMaterials lesson={currentLesson} />
+          <LessonPracticeAuto subjectId={subjectId} lesson={currentLesson} />
+          <NotesAndVocab subjectId={subjectId} lesson={currentLesson} />
+        </>
+      ) : (
+        <MyAcademicWords />
+      )}
     </div>
   );
 }

@@ -210,7 +210,7 @@ export default function App() {
 
       <footer className="relative z-10 mt-10 border-t border-white/50 bg-white/60 py-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/60">
         <div className="mx-auto max-w-6xl px-4 text-xs text-slate-700 dark:text-slate-300">
-          <p>Educational demo. ©Besoangel {new Date().getFullYear()} Academic Language Tool.</p>
+          <p>©HGSE Group-9, 2025 </p><p>Academic Language Demo-Tool.</p>
         </div>
       </footer>
     </div>

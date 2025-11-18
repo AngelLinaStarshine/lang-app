@@ -1,20 +1,26 @@
 /* eslint-env es2020 */
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import AccessTeacher from "./access";
+import * as mammoth from "mammoth";
 
-// --- PDF.js setup (CRA-friendly, v3.11.174) ---
+import KeyWordsGlossary from "../utils/KeyWordsGlossary";
+
+// PDF.js
 import * as pdfjsLib from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.js?url";
+
+// i18n
+import { useLang, TEXT, SUBJECTS, getSubjectTitle } from "../i18n";
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 const { getDocument } = pdfjsLib;
 
-/* ---------------------- subjects ---------------------- */
-const SUBJECTS = [
-  { id: "literature", title: "Literature" },
-  { id: "dance", title: "Dance" },
-  { id: "history", title: "History" },
-  { id: "it", title: "Information technology" },
-];
+/* ---------- DOCX helper ---------- */
+async function readDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const { value } = await mammoth.extractRawText({ arrayBuffer });
+  return (value || "").trim();
+}
 
 /* ------------------ tiny LS helpers ------------------ */
 const KEYS = {
@@ -127,8 +133,34 @@ function makeEmptyResource() {
   };
 }
 
-function ResourceEditor({ resource, onChange }) {
+function guessMime(name) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".doc")) return "application/msword";
+  if (lower.endsWith(".docx"))
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (lower.endsWith(".ppt")) return "application/vnd.ms-powerpoint";
+  if (lower.endsWith(".pptx"))
+    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  return "application/octet-stream";
+}
+
+function prettySize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  const u = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(n < 10 && i > 0 ? 1 : 0)} ${u[i]}`;
+}
+
+/* -------------------- ResourceEditor -------------------- */
+function ResourceEditor({ resource, onChange, lang }) {
   const [local, setLocal] = useState(resource);
+  const tTeacher = TEXT.teacher;
 
   function update(patch) {
     const next = { ...local, ...patch };
@@ -161,20 +193,24 @@ function ResourceEditor({ resource, onChange }) {
     <div className="rounded-xl border p-3 dark:border-slate-700">
       <div className="grid gap-2 md:grid-cols-4">
         <label className="text-xs">
-          Type
+          {lang === "es" ? "Tipo" : "Type"}
           <select
             className="mt-1 w-full rounded-lg border p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             value={local.kind}
             onChange={(e) => update({ kind: e.target.value })}
           >
-            <option value="notes">Lecture notes (files)</option>
-            <option value="video">Video link</option>
-            <option value="whiteboard">Whiteboard/Miro link</option>
+            <option value="notes">
+              {lang === "es" ? "Apuntes / archivos" : "Lecture notes (files)"}
+            </option>
+            <option value="video">{lang === "es" ? "Enlace de video" : "Video link"}</option>
+            <option value="whiteboard">
+              {lang === "es" ? "Pizarra/Miro" : "Whiteboard/Miro link"}
+            </option>
           </select>
         </label>
 
         <label className="text-xs">
-          Category
+          {lang === "es" ? "Categoría" : "Category"}
           <select
             className="mt-1 w-full rounded-lg border p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             value={local.category}
@@ -190,7 +226,7 @@ function ResourceEditor({ resource, onChange }) {
 
         {local.kind === "video" && (
           <label className="text-xs md:col-span-2">
-            Video URL
+            {lang === "es" ? "URL del video" : "Video URL"}
             <input
               type="url"
               placeholder="https://…"
@@ -203,7 +239,7 @@ function ResourceEditor({ resource, onChange }) {
 
         {local.kind === "whiteboard" && (
           <label className="text-xs md:col-span-2">
-            Whiteboard/Miro URL
+            {lang === "es" ? "URL de pizarra/Miro" : "Whiteboard/Miro URL"}
             <input
               type="url"
               placeholder="https://miro.com/app/board/…"
@@ -218,7 +254,7 @@ function ResourceEditor({ resource, onChange }) {
       {local.kind === "notes" && (
         <div className="mt-3">
           <label className="text-xs block">
-            Upload lecture files (Word/PDF/PPT)
+            {tTeacher.uploadLectureFiles[lang]}
             <input
               type="file"
               multiple
@@ -231,7 +267,10 @@ function ResourceEditor({ resource, onChange }) {
           {local.files?.length > 0 && (
             <ul className="mt-2 space-y-1 text-sm">
               {local.files.map((f, i) => (
-                <li key={i} className="flex items-center justify-between rounded border px-2 py-1 dark:border-slate-700">
+                <li
+                  key={i}
+                  className="flex items-center justify-between rounded border px-2 py-1 dark:border-slate-700"
+                >
                   <a href={f.url} target="_blank" rel="noreferrer" className="truncate">
                     {f.name} <span className="opacity-60">({prettySize(f.size)})</span>
                   </a>
@@ -240,7 +279,7 @@ function ResourceEditor({ resource, onChange }) {
                     onClick={() => removeFile(i)}
                     className="ml-3 rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
                   >
-                    Remove
+                    {lang === "es" ? "Eliminar" : "Remove"}
                   </button>
                 </li>
               ))}
@@ -252,31 +291,10 @@ function ResourceEditor({ resource, onChange }) {
   );
 }
 
-function guessMime(name) {
-  const lower = name.toLowerCase();
-  if (lower.endsWith(".pdf")) return "application/pdf";
-  if (lower.endsWith(".doc")) return "application/msword";
-  if (lower.endsWith(".docx"))
-    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-  if (lower.endsWith(".ppt")) return "application/vnd.ms-powerpoint";
-  if (lower.endsWith(".pptx"))
-    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-  return "application/octet-stream";
-}
-function prettySize(bytes) {
-  if (!bytes && bytes !== 0) return "";
-  const u = ["B", "KB", "MB", "GB"];
-  let n = bytes;
-  let i = 0;
-  while (n >= 1024 && i < u.length - 1) {
-    n /= 1024;
-    i++;
-  }
-  return `${n.toFixed(n < 10 && i > 0 ? 1 : 0)} ${u[i]}`;
-}
-
 /* -------------------- Add / list lessons -------------------- */
-function LessonManager() {
+function LessonManager({ lang }) {
+  const tTeacher = TEXT.teacher;
+
   const [subjectId, setSubjectId] = useState(SUBJECTS[0].id);
   const [lessonNo, setLessonNo] = useState("");
   const [lessonTopic, setLessonTopic] = useState("");
@@ -288,26 +306,25 @@ function LessonManager() {
   const [refErr, setRefErr] = useState("");
   const [refText, setRefText] = useState("");
 
- // BEFORE
-// const courses = useMemo(() => load(KEYS.COURSES, {}), [subjectId]);
-
-// AFTER
-const courses = useMemo(() => load(KEYS.COURSES, {}), []);
-
-const lessonsForSubject = (courses[subjectId]?.lessons || [])
-  .slice()
-  .sort((a, b) => {
-    const na = Number(a.lessonNo) || 0;
-    const nb = Number(b.lessonNo) || 0;
-    return na - nb || (a.topic || "").localeCompare(b.topic || "");
-  });
-
+  // Always read the latest lessons for this subject from localStorage
+  const lessonsForSubject = (() => {
+    const all = load(KEYS.COURSES, {});
+    const arr = (all[subjectId]?.lessons || []).slice();
+    arr.sort((a, b) => {
+      const na = Number(a.lessonNo) || 0;
+      const nb = Number(b.lessonNo) || 0;
+      return na - nb || (a.topic || "").localeCompare(b.topic || "");
+    });
+    return arr;
+  })();
 
   function hydrateRefFromSaved(newLessonNo) {
     const all = load(KEYS.COURSES, {});
     const subj = all[subjectId];
     if (!subj) return setRefText("");
-    const found = subj.lessons?.find((l) => (l.lessonNo || "") === String(newLessonNo || ""));
+    const found = subj.lessons?.find(
+      (l) => (l.lessonNo || "") === String(newLessonNo || "")
+    );
     setRefText(found?.refText || "");
   }
 
@@ -335,7 +352,7 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
 
   function saveLesson() {
     if (!lessonNo || !lessonTopic) {
-      setMessage("Please enter both Lesson # and Topic.");
+      setMessage(tTeacher.msgMissingLessonFields[lang]);
       return;
     }
     const lesson = {
@@ -366,6 +383,7 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
       subject.lessons[idx] = {
         ...prev,
         ...lesson,
+        // If refText did not change, keep existing vocab/items
         vocab: prev.vocab && lesson.refText === prev.refText ? prev.vocab : prev.vocab,
         items: prev.items && lesson.refText === prev.refText ? prev.items : prev.items,
       };
@@ -375,14 +393,15 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
 
     all[subjectId] = subject;
     save(KEYS.COURSES, all);
-    setMessage(`Saved lesson ${lesson.lessonNo} – ${lesson.topic}`);
+    const savedPrefix = lang === "es" ? "Lección guardada" : "Saved lesson";
+    setMessage(`${savedPrefix} ${lesson.lessonNo} – ${lesson.topic}`);
   }
 
   function clearSubject() {
     const all = load(KEYS.COURSES, {});
     delete all[subjectId];
     save(KEYS.COURSES, all);
-    setMessage("Cleared all lessons for this subject.");
+    setMessage(tTeacher.msgClearedSubject[lang]);
     resetForm();
   }
 
@@ -398,14 +417,16 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
         extracted = await readPdf(file);
       } else if (lower.endsWith(".txt")) {
         extracted = await readTxt(file);
+      } else if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+        extracted = await readDocx(file);
       } else {
-        setRefErr("Unsupported file type. Please choose a PDF or TXT.");
+        setRefErr(tTeacher.msgUnsupportedFile[lang]);
         return;
       }
       setRefText(extracted || "");
     } catch (ex) {
       console.error(ex);
-      setRefErr("Could not extract text from the file.");
+      setRefErr(tTeacher.msgExtractFail[lang]);
     } finally {
       setRefBusy(false);
       e.target.value = "";
@@ -414,7 +435,7 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
 
   function generatePractice() {
     if (!lessonNo) {
-      setRefErr("Enter a Lesson # first.");
+      setRefErr(tTeacher.msgEnterLessonFirst[lang]);
       return;
     }
     const text = refText || "";
@@ -446,7 +467,11 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
 
     all[subjectId] = subject;
     save(KEYS.COURSES, all);
-    setMessage(`Generated practice for lesson ${lessonNo}.`);
+    const msg =
+      lang === "es"
+        ? `Práctica generada para la lección ${lessonNo}.`
+        : `Generated practice for lesson ${lessonNo}.`;
+    setMessage(msg);
   }
 
   function clearRefAndPractice() {
@@ -464,7 +489,11 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
       save(KEYS.COURSES, all);
     }
     setRefText("");
-    setMessage(`Cleared reference text & practice for lesson ${lessonNo}.`);
+    const msg =
+      lang === "es"
+        ? `Se borró el texto de referencia y la práctica de la lección ${lessonNo}.`
+        : `Cleared reference text & practice for lesson ${lessonNo}.`;
+    setMessage(msg);
   }
 
   return (
@@ -472,7 +501,7 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
       <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-2 md:flex-row md:items-end">
           <label className="text-xs">
-            Subject
+            {tTeacher.subjectLabel[lang]}
             <select
               className="mt-1 w-full rounded-lg border p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={subjectId}
@@ -483,14 +512,14 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
             >
               {SUBJECTS.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title}
+                  {getSubjectTitle(s.id, lang)}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="text-xs md:ml-3">
-            Lesson #
+            {tTeacher.lessonNumber[lang]}
             <input
               type="number"
               inputMode="numeric"
@@ -501,18 +530,18 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
                 setLessonNo(e.target.value);
                 hydrateRefFromSaved(e.target.value);
               }}
-              placeholder="e.g., 1"
+              placeholder="1"
             />
           </label>
 
           <label className="text-xs md:ml-3 md:w-96">
-            Lesson Topic
+            {tTeacher.lessonTopic[lang]}
             <input
               type="text"
               className="mt-1 w-full rounded-lg border p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               value={lessonTopic}
               onChange={(e) => setLessonTopic(e.target.value)}
-              placeholder="e.g., Introduction to Algorithms"
+              placeholder={tTeacher.lessonTopicPlaceholder[lang]}
             />
           </label>
         </div>
@@ -523,14 +552,14 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
             onClick={saveLesson}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            Save Lesson
+            {tTeacher.saveLesson[lang]}
           </button>
           <button
             type="button"
             onClick={clearSubject}
             className="rounded-xl border px-4 py-2 text-sm dark:border-slate-700"
           >
-            Clear Subject
+            {tTeacher.clearSubject[lang]}
           </button>
         </div>
       </div>
@@ -552,7 +581,11 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
                 </button>
               )}
             </div>
-            <ResourceEditor resource={res} onChange={(next) => updateResource(i, next)} />
+            <ResourceEditor
+              resource={res}
+              onChange={(next) => updateResource(i, next)}
+              lang={lang}
+            />
           </div>
         ))}
       </div>
@@ -563,31 +596,34 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
           onClick={addResource}
           className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
         >
-          + Add another resource
+          {tTeacher.addResource[lang]}
         </button>
       </div>
 
       {/* Reference Text (per subject+lesson) */}
       <aside className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-        <h3 className="mb-2 text-base font-semibold">Reference Text → Vocabulary & Practice</h3>
+        <h3 className="mb-2 text-base font-semibold">{tTeacher.refHeader[lang]}</h3>
 
         <div className="mb-2 flex items-center gap-2">
           <input
             type="file"
-            accept=".pdf,.txt"
+            accept=".pdf,.txt,.doc,.docx"
             onChange={handleRefFile}
             className="block w-full text-sm file:mr-3 file:rounded-lg file:border file:bg-white file:px-3 file:py-2 file:text-sm dark:file:border-slate-700 dark:file:bg-slate-800"
-            aria-label="Upload PDF or TXT to auto-fill the reference text"
+            aria-label={tTeacher.uploadRefAria[lang]}
           />
-          {refBusy && <span className="text-xs text-slate-500">Extracting text…</span>}
+          {refBusy && (
+            <span className="text-xs text-slate-500">{tTeacher.refBusy[lang]}</span>
+          )}
         </div>
         {refErr && <p className="mb-2 text-sm text-red-600">{refErr}</p>}
 
         <textarea
           className="mt-1 h-40 w-full rounded-xl border p-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-          placeholder={`Paste or upload ~1–3 paragraphs for ${
-            SUBJECTS.find((s) => s.id === subjectId)?.title || "Subject"
-          } — Lesson ${lessonNo || "?"}…`}
+          placeholder={`${tTeacher.refPlaceholderPrefix[lang]} ${getSubjectTitle(
+            subjectId,
+            lang
+          )} — ${tTeacher.lessonWord[lang]} ${lessonNo || "?"}…`}
           value={refText}
           onChange={(e) => setRefText(e.target.value)}
         />
@@ -598,56 +634,72 @@ const lessonsForSubject = (courses[subjectId]?.lessons || [])
             onClick={generatePractice}
             type="button"
           >
-            Save & Generate
+            {tTeacher.saveGenerate[lang]}
           </button>
 
-        <button
+          <button
             className="rounded-xl border px-4 py-2 text-sm dark:border-slate-700"
             onClick={clearRefAndPractice}
             type="button"
           >
-            Clear ref/practice (this lesson)
+            {tTeacher.clearRef[lang]}
           </button>
         </div>
       </aside>
 
       {/* Existing lessons list */}
-      <LessonsList subjectId={subjectId} lessons={lessonsForSubject} />
+      <LessonsList subjectId={subjectId} lessons={lessonsForSubject} lang={lang} />
     </section>
   );
 }
 
-function LessonsList({ subjectId, lessons }) {
-  const subjectTitle = SUBJECTS.find((s) => s.id === subjectId)?.title || "Subject";
+/* -------------------- LessonsList -------------------- */
+function LessonsList({ subjectId, lessons, lang }) {
+  const tTeacher = TEXT.teacher;
+  const subjectTitle = getSubjectTitle(subjectId, lang);
+
   if (!lessons.length) {
-    return <p className="mt-4 text-sm text-slate-500">No lessons saved yet for {subjectTitle}.</p>;
+    return (
+      <p className="mt-4 text-sm text-slate-500">
+        {tTeacher.noLessonsForSubject(subjectTitle, lang)}
+      </p>
+    );
   }
   return (
     <details className="mt-6">
       <summary className="cursor-pointer text-sm font-semibold">
-        {subjectTitle} — {lessons.length} lesson{lessons.length > 1 ? "s" : ""}
+        {tTeacher.lessonsSummary(subjectTitle, lessons.length, lang)}
       </summary>
       <ul className="mt-2 space-y-3">
         {lessons.map((l, idx) => (
           <li key={idx} className="rounded-xl border p-3 text-sm dark:border-slate-700">
             <div className="mb-2 font-medium">
-              Lesson {l.lessonNo}: {l.topic || <span className="opacity-60">Untitled</span>}
+              {tTeacher.lessonWord[lang]} {l.lessonNo}:{" "}
+              {l.topic || <span className="opacity-60">Untitled</span>}
             </div>
 
             {/* Ref text + practice */}
             <details className="mb-2">
-              <summary className="cursor-pointer text-xs font-semibold">Reference & Practice</summary>
+              <summary className="cursor-pointer text-xs font-semibold">
+                {lang === "es" ? "Referencia y práctica" : "Reference & Practice"}
+              </summary>
               <div className="mt-2 space-y-2">
-                <div className="text-xs opacity-70">{l.refText ? "Reference text" : "No reference text saved."}</div>
+                <div className="text-xs opacity-70">
+                  {l.refText
+                    ? tTeacher.referenceTextLabel[lang]
+                    : tTeacher.noReferenceText[lang]}
+                </div>
                 {l.refText && (
-                  <div className="rounded border p-2 text-xs leading-relaxed dark:border-slate-700 max-h-40 overflow-auto whitespace-pre-wrap">
+                  <div className="max-h-40 overflow-auto whitespace-pre-wrap rounded border p-2 text-xs leading-relaxed dark:border-slate-700">
                     {l.refText}
                   </div>
                 )}
 
                 {Array.isArray(l.items) && l.items.length > 0 ? (
                   <div>
-                    <div className="mt-2 text-xs opacity-70">Generated items ({l.items.length})</div>
+                    <div className="mt-2 text-xs opacity-70">
+                      {tTeacher.generatedItemsLabel(l.items.length, lang)}
+                    </div>
                     <ul className="mt-1 list-decimal pl-5">
                       {l.items.map((q, i) => (
                         <li key={i} className="mb-1">
@@ -655,7 +707,10 @@ function LessonsList({ subjectId, lessons }) {
                           {q.choices && (
                             <div className="mt-1 grid grid-cols-1 gap-1 md:grid-cols-2">
                               {q.choices.map((c, ci) => (
-                                <span key={ci} className="rounded border px-2 py-1 text-xs dark:border-slate-700">
+                                <span
+                                  key={ci}
+                                  className="rounded border px-2 py-1 text-xs dark:border-slate-700"
+                                >
                                   {c}
                                 </span>
                               ))}
@@ -666,7 +721,9 @@ function LessonsList({ subjectId, lessons }) {
                     </ul>
                   </div>
                 ) : (
-                  <div className="text-xs text-slate-500">No practice generated yet.</div>
+                  <div className="text-xs text-slate-500">
+                    {tTeacher.noPracticeYet[lang]}
+                  </div>
                 )}
               </div>
             </details>
@@ -677,29 +734,52 @@ function LessonsList({ subjectId, lessons }) {
                 {l.resources.map((r, i) => (
                   <div key={i} className="rounded border p-2 dark:border-slate-700">
                     <div className="mb-1 text-xs opacity-70">
-                      {r.category} • {r.kind === "notes" ? "Lecture files" : r.kind === "video" ? "Video" : "Whiteboard/Miro"}
+                      {r.category} •{" "}
+                      {r.kind === "notes"
+                        ? tTeacher.lectureFilesLabel[lang]
+                        : r.kind === "video"
+                        ? "Video"
+                        : "Whiteboard/Miro"}
                     </div>
-                    {r.kind === "notes" && (r.files?.length ? (
-                      <ul className="list-disc pl-4">
-                        {r.files.map((f, fi) => (
-                          <li key={fi}>
-                            <a className="underline" href={f.url} target="_blank" rel="noreferrer">
-                              {f.name}
-                            </a>{" "}
-                            <span className="opacity-60">({prettySize(f.size)})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-xs text-slate-500">No files attached.</div>
-                    ))}
+                    {r.kind === "notes" &&
+                      (r.files?.length ? (
+                        <ul className="list-disc pl-4">
+                          {r.files.map((f, fi) => (
+                            <li key={fi}>
+                              <a
+                                className="underline"
+                                href={f.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {f.name}
+                              </a>{" "}
+                              <span className="opacity-60">({prettySize(f.size)})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-xs text-slate-500">
+                          {tTeacher.noFilesAttached[lang]}
+                        </div>
+                      ))}
                     {r.kind === "video" && (
-                      <a className="underline break-all" href={r.videoLink} target="_blank" rel="noreferrer">
+                      <a
+                        className="underline break-all"
+                        href={r.videoLink}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         {r.videoLink || "—"}
                       </a>
                     )}
                     {r.kind === "whiteboard" && (
-                      <a className="underline break-all" href={r.whiteboardLink} target="_blank" rel="noreferrer">
+                      <a
+                        className="underline break-all"
+                        href={r.whiteboardLink}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         {r.whiteboardLink || "—"}
                       </a>
                     )}
@@ -707,7 +787,9 @@ function LessonsList({ subjectId, lessons }) {
                 ))}
               </div>
             ) : (
-              <div className="text-xs text-slate-500">No resources for this lesson.</div>
+              <div className="text-xs text-slate-500">
+                {tTeacher.noResources[lang]}
+              </div>
             )}
           </li>
         ))}
@@ -718,10 +800,32 @@ function LessonsList({ subjectId, lessons }) {
 
 /* ------------------------------- Page ------------------------------- */
 export default function TeacherPage() {
+  const [lang, setLang] = useLang();
+  const tCommon = TEXT.common;
+
   return (
     <>
       <AccessTeacher />
-      <LessonManager />
+
+      {/* Language switcher */}
+      <div className="mx-auto mt-4 flex w-full max-w-5xl items-center justify-end gap-2">
+        <label className="text-xs text-slate-600 dark:text-slate-300">
+          {tCommon.languageLabel[lang]}
+        </label>
+        <select
+          className="rounded-lg border border-slate-300 bg-white p-1.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+        >
+          <option value="en">{tCommon.english[lang]}</option>
+          <option value="es">{tCommon.spanish[lang]}</option>
+        </select>
+      </div>
+
+      <LessonManager lang={lang} />
+
+      {/* 🔑 Command-words glossary */}
+      <KeyWordsGlossary />
     </>
   );
 }
